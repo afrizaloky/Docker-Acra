@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+    postgresql:
+            # Build and run container based on official postgresql image with
+            # strict SSL mode
+            build:
+                dockerfile: ./postgresql/Dockerfile
+            # INSECURE!!! You MUST define your own DB name and credentials
+            environment:
+                POSTGRES_DB: ${POSTGRES_DB:-test}
+                POSTGRES_USER: ${POSTGRES_USER:-test}
+                POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test}
+            # Open the port outside for writer
+            ports:
+                - "5432:5432"
+            volumes:
+                - ./files:/host_data
+    acra-server:
+        build:
+            dockerfile: ./acra/Dockerfile
+        # restart: on-failure
+        # Open the port outside for client application
+        ports:
+            - "9393:9393"
+            - "9000:22"
+        extra_hosts:
+            - "mysql:host-gateway"
+            - "postgresql:host-gateway"
+        environment:
+            ACRA_MASTER_KEY: ${ACRA_SERVER_MASTER_KEY:-N0MyZEVCRGY1cHA4ODRSVHp3c3BNeGtDekxaV3BhTHI=}
+        volumes:
+            - ./files:/host_data
+        depends_on:
+            - postgresql
+
+    dotnet:
+        build:
+            dockerfile: ./dotnet/Dockerfile
+        restart: on-failure
+        # Open the port outside for client application
+        extra_hosts:
+            - "acra-server:host-gateway"
+            - "postgresql:host-gateway"
+        volumes:
+            - ./files:/host_data
+        depends_on:
+            - acra-server

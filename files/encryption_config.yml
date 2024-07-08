@@ -1,0 +1,9 @@
+schemas:
+- table: customer
+  columns:
+  - name
+  - email
+  - debitcard
+  encrypted:
+  - column: debitcard
+    data_type: "str"
